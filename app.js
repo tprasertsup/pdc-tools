@@ -16,6 +16,14 @@ function detectHeaderRow(rows) {
 }
 
 /**
+ * Trim leading/trailing whitespace and collapse any run of internal whitespace
+ * to a single space.  ' ธนนันท์    ประเสริฐทรัพย์' → 'ธนนันท์ ประเสริฐทรัพย์'
+ */
+function normalizeName(raw) {
+  return String(raw ?? '').trim().replace(/\s+/g, ' ');
+}
+
+/**
  * Return the first column index whose lowercased header contains any candidate.
  * Returns -1 if none match.
  */
@@ -60,7 +68,7 @@ function buildFromYearSheets(yearSheets) {
       const row = rows[i];
       if (!row || row.every(c => c === '' || c === null || c === undefined)) continue;
 
-      const name   = C.name   >= 0 ? String(row[C.name]   ?? '').trim() : '';
+      const name   = C.name   >= 0 ? normalizeName(row[C.name]) : '';
       const opd    = C.opd    >= 0 ? String(row[C.opd]    ?? '').trim() : '';
       const idYear = C.idYear >= 0 ? String(row[C.idYear] ?? '').trim() : '';
       const fee    = C.fee    >= 0 ? row[C.fee]   : '';
@@ -130,5 +138,5 @@ function buildFromYearSheets(yearSheets) {
 
 // Export for Node.js (used by test runner) and keep globals for browser
 if (typeof module !== 'undefined') {
-  module.exports = { detectHeaderRow, colIdx, buildFromYearSheets };
+  module.exports = { detectHeaderRow, colIdx, normalizeName, buildFromYearSheets };
 }

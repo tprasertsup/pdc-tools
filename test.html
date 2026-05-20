@@ -115,6 +115,29 @@ test('colIdx – first candidate wins', () => {
 });
 
 // ─────────────────────────────────────────────
+// TESTS: normalizeName
+// ─────────────────────────────────────────────
+test('normalizeName – trims leading/trailing spaces', () => {
+  expect(normalizeName('  ธนนันท์ ประเสริฐทรัพย์  ')).toBe('ธนนันท์ ประเสริฐทรัพย์');
+});
+
+test('normalizeName – collapses multiple spaces between words', () => {
+  expect(normalizeName('ธนนันท์    ประเสริฐทรัพย์')).toBe('ธนนันท์ ประเสริฐทรัพย์');
+});
+
+test('normalizeName – trims AND collapses together', () => {
+  expect(normalizeName(' ธนนันท์    ประเสริฐทรัพย์ ')).toBe('ธนนันท์ ประเสริฐทรัพย์');
+});
+
+test('normalizeName – handles tabs and newlines as whitespace', () => {
+  expect(normalizeName('สมชาย\t\tใจดี')).toBe('สมชาย ใจดี');
+});
+
+test('normalizeName – already clean name is unchanged', () => {
+  expect(normalizeName('สมชาย ใจดี')).toBe('สมชาย ใจดี');
+});
+
+// ─────────────────────────────────────────────
 // TESTS: buildFromYearSheets – grouping
 // ─────────────────────────────────────────────
 test('single patient visits 1 year → มา1ปี+62', () => {
@@ -273,6 +296,36 @@ test('row with no name and no OPD is skipped', () => {
   };
   const { patientCount } = buildFromYearSheets(data);
   expect(patientCount).toBe(1);
+});
+
+test('name with leading/trailing spaces deduped with clean name', () => {
+  const noOpdHdr = ['No', 'ชื่อลูกค้า', 'Fee', 'Date', 'Treat'];
+  const data = {
+    '2562': [noOpdHdr, [1, '  ธนนันท์ ประเสริฐทรัพย์  ', 900, '620105', 62]],
+    '2563': [noOpdHdr, [1, 'ธนนันท์ ประเสริฐทรัพย์',    900, '630106', 63]],
+  };
+  const { patientCount } = buildFromYearSheets(data);
+  expect(patientCount).toBe(1);
+});
+
+test('name with extra spaces between words deduped correctly', () => {
+  const noOpdHdr = ['No', 'ชื่อลูกค้า', 'Fee', 'Date', 'Treat'];
+  const data = {
+    '2562': [noOpdHdr, [1, 'ธนนันท์    ประเสริฐทรัพย์', 900, '620105', 62]],
+    '2568': [noOpdHdr, [1, 'ธนนันท์ ประเสริฐทรัพย์   ', 900, '680201', 68]],
+  };
+  const { patientCount, outputSheets } = buildFromYearSheets(data);
+  expect(patientCount).toBe(1);
+  expect(outputSheets[0].rows[0].totalYears).toBe(2);
+});
+
+test('stored name is the normalized form', () => {
+  const noOpdHdr = ['No', 'ชื่อลูกค้า', 'Fee', 'Date', 'Treat'];
+  const data = {
+    '2562': [noOpdHdr, [1, '  ธนนันท์    ประเสริฐทรัพย์  ', 900, '620105', 62]],
+  };
+  const { outputSheets } = buildFromYearSheets(data);
+  expect(outputSheets[0].rows[0].name).toBe('ธนนันท์ ประเสริฐทรัพย์');
 });
 
 test('header-only sheet (no data rows) produces no patients', () => {
