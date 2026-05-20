@@ -6,6 +6,7 @@
   <title>PDC Dental - ระบบสรุปประกันสังคม</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="app.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <style>
     * { font-family: 'Sarabun', sans-serif; }
@@ -152,125 +153,19 @@ function buildOutput(wb) {
   inputYears = yearSheetNames;
   setStatus('loading', `พบข้อมูล ${yearSheetNames.length} ปี: ${yearSheetNames.join(', ')} — กำลังประมวลผล…`);
 
-  // ── 2. Parse each year sheet → patientMap
-  // Key: OPD No. (stable patient id); fallback: name
-  // Value: { name, opd, years: { "2562": {idYear,fee,date,treat} } }
-  const patientMap = {};
-
+  // Convert each XLSX sheet to array-of-arrays and hand off to app.js
+  const yearSheets = {};
   yearSheetNames.forEach(yearStr => {
-    const rows = XLSX.utils.sheet_to_json(wb.Sheets[yearStr], { header: 1, defval: '' });
-    const hi   = detectHeaderRow(rows);
-    const hdrs = rows[hi].map(h => String(h).trim().toLowerCase());
-
-    const C = {
-      no:     colIdx(hdrs, ['no']),
-      name:   colIdx(hdrs, ['ชื่อลูกค้า', 'ชื่อ-นามสกุล', 'ชื่อ', 'name', 'customer']),
-      opd:    colIdx(hdrs, ['opd no.', 'opd no', 'opd', 'opdno']),
-      idYear: colIdx(hdrs, ['id-year', 'id year', 'idyear', 'id-ปี', 'id_year']),
-      fee:    colIdx(hdrs, ['fee', 'ค่าบริการ', 'ราคา', 'amount']),
-      date:   colIdx(hdrs, ['date', 'วันที่', 'วันที่รับ']),
-      treat:  colIdx(hdrs, ['treat', 'treatment', 'การรักษา']),
-    };
-
-    for (let i = hi + 1; i < rows.length; i++) {
-      const row = rows[i];
-      if (!row || row.every(c => c === '' || c === null || c === undefined)) continue;
-
-      const name   = C.name   >= 0 ? String(row[C.name]   || '').trim() : '';
-      const opd    = C.opd    >= 0 ? String(row[C.opd]    || '').trim() : '';
-      const idYear = C.idYear >= 0 ? String(row[C.idYear]  || '').trim() : '';
-      const fee    = C.fee    >= 0 ? row[C.fee]    : '';
-      const date   = C.date   >= 0 ? row[C.date]   : '';
-      const treat  = C.treat  >= 0 ? row[C.treat]  : '';
-
-      if (!name && !opd) continue;
-
-      const key = opd || name;
-
-      if (!patientMap[key]) {
-        patientMap[key] = { name, opd, years: {} };
-      }
-      // Update name if blank
-      if (!patientMap[key].name && name) patientMap[key].name = name;
-      if (!patientMap[key].opd  && opd)  patientMap[key].opd  = opd;
-
-      // Keep latest entry per year (in case of duplicates within same sheet)
-      patientMap[key].years[yearStr] = { idYear, fee, date, treat };
-    }
+    yearSheets[yearStr] = XLSX.utils.sheet_to_json(wb.Sheets[yearStr], { header: 1, defval: '' });
   });
 
-  // ── 3. Group patients by (totalYears, latestYear)
-  const groups = {}; // "มาXปี+YY" → [patientRow]
+  const result = buildFromYearSheets(yearSheets);
+  outputSheets = result.outputSheets;
 
-  Object.values(patientMap).forEach(p => {
-    const visitedYears = Object.keys(p.years).sort();
-    const totalYears   = visitedYears.length;
-    const latestYear   = visitedYears[visitedYears.length - 1];
-    const latestYY     = latestYear.slice(-2); // e.g. "68"
-    const prevYear     = visitedYears.length >= 2
-      ? visitedYears[visitedYears.length - 2].slice(-2)
-      : '';
-
-    const groupKey = `มา${totalYears}ปี+${latestYY}`;
-    if (!groups[groupKey]) groups[groupKey] = [];
-
-    const d = p.years[latestYear];
-    groups[groupKey].push({
-      name: p.name,
-      opd:  p.opd,
-      idYear: d.idYear,
-      fee:    d.fee,
-      date:   d.date,
-      treat:  d.treat,
-      totalYears,
-      latestYY,
-      prevYear,
-    });
-  });
-
-  // ── 4. Sort groups: most years first → latest year first
-  const sortedKeys = Object.keys(groups).sort((a, b) => {
-    const ay = parseInt(a.match(/มา(\d+)ปี/)[1]);
-    const by = parseInt(b.match(/มา(\d+)ปี/)[1]);
-    if (ay !== by) return by - ay;
-    const al = parseInt(a.match(/\+(\d+)/)[1]);
-    const bl = parseInt(b.match(/\+(\d+)/)[1]);
-    return bl - al;
-  });
-
-  // ── 5. Sort rows within each group by OPD No. / name
-  outputSheets = sortedKeys.map(key => ({
-    name: key,
-    rows: groups[key].sort((a, b) =>
-      (a.opd || a.name || '').localeCompare(b.opd || b.name || '', 'th')
-    ),
-  }));
-
-  const totalPatients = Object.keys(patientMap).length;
   setStatus('success',
-    `ประมวลผลสำเร็จ — คนไข้ทั้งหมด <strong>${totalPatients}</strong> คน | ${outputSheets.length} กลุ่ม`);
+    `ประมวลผลสำเร็จ — คนไข้ทั้งหมด <strong>${result.patientCount}</strong> คน | ${outputSheets.length} กลุ่ม`);
 
   renderResult();
-}
-
-// ─────────────────────────────────────────────
-// HELPERS
-// ─────────────────────────────────────────────
-function detectHeaderRow(rows) {
-  const kw = ['ชื่อ', 'opd', 'fee', 'date', 'treat', 'no', 'id'];
-  for (let i = 0; i < Math.min(rows.length, 6); i++) {
-    const s = (rows[i] || []).join(' ').toLowerCase();
-    if (kw.filter(k => s.includes(k)).length >= 3) return i;
-  }
-  return 0;
-}
-
-function colIdx(headers, candidates) {
-  for (const c of candidates) {
-    const i = headers.findIndex(h => h.includes(c.toLowerCase()));
-    if (i >= 0) return i;
-  }
-  return -1;
 }
 
 function escHtml(s) {

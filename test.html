@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PDC – Unit Tests</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="app.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>* { font-family: 'Sarabun', sans-serif; }</style>
+</head>
+<body class="bg-slate-50 min-h-screen p-6">
+<div class="max-w-3xl mx-auto">
+
+  <h1 class="text-xl font-bold text-gray-800 mb-1">PDC Dental – Unit Tests</h1>
+  <p id="summary" class="text-sm text-gray-500 mb-6"></p>
+
+  <div id="results" class="space-y-2"></div>
+
+</div>
+<script>
+// ─────────────────────────────────────────────
+// MINI TEST FRAMEWORK
+// ─────────────────────────────────────────────
+const tests  = [];
+let passed   = 0;
+let failed   = 0;
+
+function test(description, fn) {
+  tests.push({ description, fn });
+}
+
+function expect(actual) {
+  return {
+    toBe(expected) {
+      if (actual !== expected)
+        throw new Error(`คาดหวัง ${JSON.stringify(expected)} แต่ได้ ${JSON.stringify(actual)}`);
+    },
+    toEqual(expected) {
+      const a = JSON.stringify(actual);
+      const e = JSON.stringify(expected);
+      if (a !== e)
+        throw new Error(`คาดหวัง ${e}\nแต่ได้    ${a}`);
+    },
+    toContain(item) {
+      if (!actual.includes(item))
+        throw new Error(`คาดหวังให้มี ${JSON.stringify(item)} แต่ได้ ${JSON.stringify(actual)}`);
+    },
+    toHaveLength(n) {
+      if ((actual?.length ?? actual?.size) !== n)
+        throw new Error(`คาดหวัง length ${n} แต่ได้ ${actual?.length ?? actual?.size}`);
+    },
+  };
+}
+
+// Standard header row used across most tests
+const STD_HDR = ['No', 'ชื่อลูกค้า', 'OPD No.', 'ID-Year', 'Fee', 'Date', 'Treat'];
+
+function makeSheet(rows) {
+  return [STD_HDR, ...rows];
+}
+
+// ─────────────────────────────────────────────
+// TESTS: detectHeaderRow
+// ─────────────────────────────────────────────
+test('detectHeaderRow – header on row 0', () => {
+  const rows = [
+    ['No', 'ชื่อลูกค้า', 'OPD No.', 'ID-Year', 'Fee', 'Date', 'Treat'],
+    [1, 'สมชาย ใจดี', '0001-62', '62', 900, '620105', 62],
+  ];
+  expect(detectHeaderRow(rows)).toBe(0);
+});
+
+test('detectHeaderRow – title row above header', () => {
+  const rows = [
+    ['รายชื่อผู้ประกันตน ปี 2562'],
+    ['No', 'ชื่อลูกค้า', 'OPD No.', 'ID-Year', 'Fee', 'Date', 'Treat'],
+    [1, 'สมชาย ใจดี', '0001-62', '62', 900, '620105', 62],
+  ];
+  expect(detectHeaderRow(rows)).toBe(1);
+});
+
+test('detectHeaderRow – header row found within first 6 rows', () => {
+  const rows = [
+    [''],
+    [''],
+    [''],
+    ['No', 'ชื่อลูกค้า', 'OPD No.', 'Fee', 'Date', 'Treat', 'ID-Year'],
+  ];
+  expect(detectHeaderRow(rows)).toBe(3);
+});
+
+// ─────────────────────────────────────────────
+// TESTS: colIdx
+// ─────────────────────────────────────────────
+test('colIdx – finds exact match', () => {
+  const h = ['no', 'ชื่อลูกค้า', 'opd no.', 'id-year', 'fee', 'date', 'treat'];
+  expect(colIdx(h, ['ชื่อลูกค้า'])).toBe(1);
+});
+
+test('colIdx – finds partial match (opd no. contains opd)', () => {
+  const h = ['no', 'ชื่อลูกค้า', 'opd no.', 'id-year', 'fee', 'date', 'treat'];
+  expect(colIdx(h, ['opd no.', 'opd no', 'opd'])).toBe(2);
+});
+
+test('colIdx – returns -1 when not found', () => {
+  const h = ['no', 'ชื่อลูกค้า', 'opd no.'];
+  expect(colIdx(h, ['fee', 'amount'])).toBe(-1);
+});
+
+test('colIdx – first candidate wins', () => {
+  const h = ['no', 'ชื่อ', 'ชื่อลูกค้า'];
+  // 'ชื่อลูกค้า' candidate found at index 2, but 'ชื่อ' candidate finds index 1 first
+  expect(colIdx(h, ['ชื่อลูกค้า', 'ชื่อ'])).toBe(2);
+});
+
+// ─────────────────────────────────────────────
+// TESTS: buildFromYearSheets – grouping
+// ─────────────────────────────────────────────
+test('single patient visits 1 year → มา1ปี+62', () => {
+  const data = {
+    '2562': makeSheet([[1, 'สมชาย ใจดี', '0001-62', '62', 900, '620105', 62]]),
+  };
+  const { outputSheets, patientCount } = buildFromYearSheets(data);
+  expect(patientCount).toBe(1);
+  expect(outputSheets).toHaveLength(1);
+  expect(outputSheets[0].name).toBe('มา1ปี+62');
+  expect(outputSheets[0].rows[0].totalYears).toBe(1);
+  expect(outputSheets[0].rows[0].prevYear).toBe('');
+});
+
+test('patient visits 3 years → มา3ปี+68, prevYear is second-to-last', () => {
+  const data = {
+    '2562': makeSheet([[1, 'สมชาย ใจดี', '0001-62', '62', 900, '620105', 62]]),
+    '2563': makeSheet([[1, 'สมชาย ใจดี', '0001-62', '62', 900, '630110', 63]]),
+    '2568': makeSheet([[1, 'สมชาย ใจดี', '0001-62', '62', 900, '680210', 68]]),
+  };
+  const { outputSheets, patientCount } = buildFromYearSheets(data);
+  expect(patientCount).toBe(1);
+  expect(outputSheets[0].name).toBe('มา3ปี+68');
+  expect(outputSheets[0].rows[0].totalYears).toBe(3);
+  expect(outputSheets[0].rows[0].prevYear).toBe('63');  // 2nd-to-last = 2563
+});
+
+test('patient visits 4 years → มา4ปี+68, prevYear=67', () => {
+  const data = {
+    '2562': makeSheet([[1, 'มานี มีสุข', '0002-55', '55', 900, '620201', 62]]),
+    '2565': makeSheet([[1, 'มานี มีสุข', '0002-55', '55', 900, '650201', 65]]),
+    '2567': makeSheet([[1, 'มานี มีสุข', '0002-55', '55', 900, '670201', 67]]),
+    '2568': makeSheet([[1, 'มานี มีสุข', '0002-55', '55', 900, '680201', 68]]),
+  };
+  const { outputSheets } = buildFromYearSheets(data);
+  expect(outputSheets[0].name).toBe('มา4ปี+68');
+  expect(outputSheets[0].rows[0].prevYear).toBe('67');
+});
+
+// ─────────────────────────────────────────────
+// TESTS: buildFromYearSheets – deduplication
+// ─────────────────────────────────────────────
+test('same OPD No. across years → one patient, 2 years', () => {
+  const data = {
+    '2562': makeSheet([[1, 'สมชาย ใจดี', '0001-62', '62', 900, '620105', 62]]),
+    '2563': makeSheet([[1, 'สมชาย ใจดี', '0001-62', '62', 900, '630106', 63]]),
+  };
+  const { patientCount, outputSheets } = buildFromYearSheets(data);
+  expect(patientCount).toBe(1);
+  expect(outputSheets[0].rows[0].totalYears).toBe(2);
+});
+
+test('same OPD No. appearing twice in same year sheet → counted once', () => {
+  const data = {
+    '2562': makeSheet([
+      [1, 'สมชาย ใจดี', '0001-62', '62', 900, '620105', 62],
+      [2, 'สมชาย ใจดี', '0001-62', '62', 900, '620210', 62], // duplicate visit
+    ]),
+  };
+  const { patientCount } = buildFromYearSheets(data);
+  expect(patientCount).toBe(1);
+});
+
+test('no OPD No. → dedup by name', () => {
+  const noOpdHdr = ['No', 'ชื่อลูกค้า', 'ID-Year', 'Fee', 'Date', 'Treat'];
+  const data = {
+    '2562': [noOpdHdr, [1, 'วิไลวรรณ รักดี', '60', 900, '620105', 62]],
+    '2563': [noOpdHdr, [1, 'วิไลวรรณ รักดี', '60', 900, '630106', 63]],
+  };
+  const { patientCount } = buildFromYearSheets(data);
+  expect(patientCount).toBe(1);
+});
+
+test('different OPD No. → separate patients', () => {
+  const data = {
+    '2562': makeSheet([
+      [1, 'สมชาย ใจดี',   '0001-62', '62', 900, '620105', 62],
+      [2, 'สมหญิง รักดี', '0002-55', '55', 900, '620105', 62],
+    ]),
+  };
+  const { patientCount } = buildFromYearSheets(data);
+  expect(patientCount).toBe(2);
+});
+
+// ─────────────────────────────────────────────
+// TESTS: buildFromYearSheets – data source
+// ─────────────────────────────────────────────
+test('output row uses data from the LATEST year visit', () => {
+  const data = {
+    '2562': makeSheet([[1, 'สมชาย ใจดี', '0001-62', '62', 900, '620105', 62]]),
+    '2568': makeSheet([[1, 'สมชาย ใจดี', '0001-62', '68', 800, '680201', 68]]),
+  };
+  const { outputSheets } = buildFromYearSheets(data);
+  const row = outputSheets[0].rows[0];
+  expect(row.fee).toBe(800);         // from 2568, not 2562
+  expect(String(row.date)).toBe('680201');
+  expect(row.treat).toBe(68);
+  expect(row.idYear).toBe('68');
+});
+
+// ─────────────────────────────────────────────
+// TESTS: buildFromYearSheets – sorting
+// ─────────────────────────────────────────────
+test('groups sorted: most years first', () => {
+  const data = {
+    '2562': makeSheet([[1, 'ก', '0001', '62', 900, '620105', 62]]),
+    '2563': makeSheet([
+      [1, 'ก', '0001', '62', 900, '630106', 63],
+      [2, 'ข', '0002', '62', 900, '630106', 63],
+    ]),
+    '2568': makeSheet([
+      [1, 'ก', '0001', '62', 900, '680201', 68],
+      [2, 'ข', '0002', '62', 900, '680201', 68],
+      [3, 'ค', '0003', '62', 900, '680201', 68],
+    ]),
+  };
+  // ก: 2562,2563,2568 → 3 years. ข: 2563,2568 → 2 years. ค: 2568 → 1 year
+  const { outputSheets } = buildFromYearSheets(data);
+  expect(outputSheets[0].name).toBe('มา3ปี+68');
+  expect(outputSheets[1].name).toBe('มา2ปี+68');
+  expect(outputSheets[2].name).toBe('มา1ปี+68');
+});
+
+test('tie on totalYears: latest year first', () => {
+  const data = {
+    '2566': makeSheet([[1, 'ก', '0001', '66', 900, '660101', 66]]),
+    '2567': makeSheet([[1, 'ข', '0002', '67', 900, '670101', 67]]),
+  };
+  // Both patients visited 1 year; ข's latest = 2567, ก's = 2566
+  const { outputSheets } = buildFromYearSheets(data);
+  expect(outputSheets[0].name).toBe('มา1ปี+67');
+  expect(outputSheets[1].name).toBe('มา1ปี+66');
+});
+
+// ─────────────────────────────────────────────
+// TESTS: buildFromYearSheets – edge cases
+// ─────────────────────────────────────────────
+test('empty rows are skipped', () => {
+  const data = {
+    '2562': makeSheet([
+      [1, 'สมชาย ใจดี', '0001-62', '62', 900, '620105', 62],
+      ['', '', '', '', '', '', ''],  // blank row
+      [null, null, null, null, null, null, null],
+    ]),
+  };
+  const { patientCount } = buildFromYearSheets(data);
+  expect(patientCount).toBe(1);
+});
+
+test('row with no name and no OPD is skipped', () => {
+  const data = {
+    '2562': makeSheet([
+      ['', '', '', '62', 900, '620105', 62],
+      [1, 'สมชาย ใจดี', '0001-62', '62', 900, '620105', 62],
+    ]),
+  };
+  const { patientCount } = buildFromYearSheets(data);
+  expect(patientCount).toBe(1);
+});
+
+test('header-only sheet (no data rows) produces no patients', () => {
+  const data = {
+    '2562': makeSheet([]),
+  };
+  const { patientCount, outputSheets } = buildFromYearSheets(data);
+  expect(patientCount).toBe(0);
+  expect(outputSheets).toHaveLength(0);
+});
+
+test('sheet name uses last 2 digits of year string', () => {
+  const data = {
+    '2562': makeSheet([[1, 'ก', '001', '62', 900, '620105', 62]]),
+    '2568': makeSheet([[1, 'ก', '001', '68', 900, '680201', 68]]),
+  };
+  const { outputSheets } = buildFromYearSheets(data);
+  expect(outputSheets[0].name).toBe('มา2ปี+68');
+});
+
+test('many years: 7-year patient → มา7ปี+68', () => {
+  const years = ['2562','2563','2564','2565','2566','2567','2568'];
+  const data = {};
+  years.forEach((y, i) => {
+    data[y] = makeSheet([[1, 'คนไข้เก่า', '9999-62', '62', 900, `${y.slice(-2)}0101`, parseInt(y.slice(-2))]]);
+  });
+  const { outputSheets } = buildFromYearSheets(data);
+  expect(outputSheets[0].name).toBe('มา7ปี+68');
+  expect(outputSheets[0].rows[0].totalYears).toBe(7);
+  expect(outputSheets[0].rows[0].prevYear).toBe('67');
+});
+
+// ─────────────────────────────────────────────
+// RUN ALL TESTS
+// ─────────────────────────────────────────────
+window.addEventListener('load', () => {
+  const container = document.getElementById('results');
+
+  tests.forEach(({ description, fn }) => {
+    let error = null;
+    try { fn(); } catch (e) { error = e; }
+
+    const ok = !error;
+    if (ok) passed++; else failed++;
+
+    const div = document.createElement('div');
+    div.className = `flex items-start gap-3 rounded-xl px-4 py-3 text-sm ${
+      ok ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'
+    }`;
+    div.innerHTML = `
+      <span class="mt-0.5 shrink-0 font-bold ${ok ? 'text-green-600' : 'text-red-600'}">${ok ? '✓' : '✗'}</span>
+      <div>
+        <p class="font-medium ${ok ? 'text-green-800' : 'text-red-800'}">${description}</p>
+        ${error ? `<pre class="mt-1 text-xs text-red-600 whitespace-pre-wrap">${error.message}</pre>` : ''}
+      </div>`;
+    container.appendChild(div);
+  });
+
+  const total = passed + failed;
+  const summaryEl = document.getElementById('summary');
+  summaryEl.textContent = `${passed}/${total} tests passed`;
+  summaryEl.className = `text-sm font-semibold mb-6 ${failed === 0 ? 'text-green-700' : 'text-red-600'}`;
+});
+</script>
+</body>
+</html>
