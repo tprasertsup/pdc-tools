@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PDC Dental - ระบบสรุปประกันสังคม</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { font-family: 'Sarabun', sans-serif; }
+    .tab-active { border-bottom: 2px solid #16a34a; color: #16a34a; font-weight: 600; }
+    .tab-inactive { border-bottom: 2px solid transparent; color: #6b7280; }
+    .tab-inactive:hover { color: #374151; border-bottom-color: #d1d5db; }
+  </style>
+</head>
+<body class="bg-slate-50 min-h-screen">
+
+<div class="max-w-5xl mx-auto px-4 py-8">
+
+  <!-- Header -->
+  <div class="text-center mb-8">
+    <div class="inline-flex items-center justify-center w-14 h-14 bg-green-600 rounded-2xl mb-3">
+      <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"
+          d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+      </svg>
+    </div>
+    <h1 class="text-2xl font-bold text-gray-800">PDC Dental Clinic</h1>
+    <p class="text-gray-500 mt-1">ระบบสรุปประกันสังคม (สปส) — จัดกลุ่มตามจำนวนปีที่มา</p>
+  </div>
+
+  <!-- Upload Card -->
+  <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-5">
+    <div class="flex items-center gap-2 mb-4">
+      <span class="w-7 h-7 bg-green-600 text-white text-xs font-bold rounded-full flex items-center justify-center">1</span>
+      <h2 class="font-semibold text-gray-800">อัพโหลดไฟล์ประกันสังคมรายปี</h2>
+    </div>
+
+    <div id="drop-zone"
+      class="border-2 border-dashed border-green-200 rounded-xl p-10 text-center cursor-pointer hover:border-green-400 hover:bg-green-50 transition-all group">
+      <svg class="w-12 h-12 text-green-300 group-hover:text-green-500 mx-auto mb-3 transition-colors"
+        fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+          d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+      </svg>
+      <p class="text-gray-700 font-medium">ลากไฟล์มาวางที่นี่ หรือ
+        <span class="text-green-600 underline underline-offset-2">คลิกเพื่อเลือกไฟล์</span>
+      </p>
+      <p class="text-xs text-gray-400 mt-1">รองรับ .xls, .xlsx — ไฟล์เดียวที่มีหลาย Sheet แยกตามปี (เช่น 2562, 2563, …)</p>
+      <input type="file" id="file-input" accept=".xls,.xlsx" class="hidden">
+    </div>
+
+    <div id="status-box" class="mt-4 hidden"></div>
+  </div>
+
+  <!-- Result Card -->
+  <div id="result-card" class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hidden">
+    <div class="flex items-start justify-between mb-5">
+      <div>
+        <div class="flex items-center gap-2 mb-1">
+          <span class="w-7 h-7 bg-green-600 text-white text-xs font-bold rounded-full flex items-center justify-center">2</span>
+          <h2 class="font-semibold text-gray-800">ผลลัพธ์</h2>
+        </div>
+        <p id="summary-text" class="text-sm text-gray-500 ml-9"></p>
+      </div>
+      <button onclick="downloadExcel()"
+        class="flex items-center gap-2 bg-green-600 hover:bg-green-700 active:bg-green-800 text-white px-5 py-2.5 rounded-xl font-medium transition-colors shrink-0 ml-4">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+        </svg>
+        ดาวน์โหลด สปส Excel
+      </button>
+    </div>
+
+    <!-- Sheet tabs -->
+    <div class="overflow-x-auto mb-0 border-b border-gray-200">
+      <div id="sheet-tabs" class="flex gap-0 min-w-max"></div>
+    </div>
+
+    <!-- Preview table -->
+    <div class="overflow-x-auto mt-0">
+      <table id="preview-table" class="w-full text-sm border-collapse min-w-max"></table>
+    </div>
+    <p class="text-xs text-gray-400 mt-3 text-center">
+      แสดง 50 แถวแรก — ดาวน์โหลด Excel เพื่อดูข้อมูลครบทั้งหมด
+    </p>
+  </div>
+
+</div><!-- end container -->
+
+<script>
+// ─────────────────────────────────────────────
+// STATE
+// ─────────────────────────────────────────────
+let outputSheets = [];   // [{name, rows:[{no,name,opd,idYear,fee,date,treat,totalYears,prevYear}]}]
+let inputYears  = [];    // sorted list of year strings found in input
+let activeTabIdx = 0;
+
+// ─────────────────────────────────────────────
+// UPLOAD WIRING
+// ─────────────────────────────────────────────
+const dropZone  = document.getElementById('drop-zone');
+const fileInput = document.getElementById('file-input');
+
+dropZone.addEventListener('click', () => fileInput.click());
+dropZone.addEventListener('dragover', e => {
+  e.preventDefault();
+  dropZone.classList.add('border-green-400', 'bg-green-50');
+});
+dropZone.addEventListener('dragleave', () => {
+  dropZone.classList.remove('border-green-400', 'bg-green-50');
+});
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropZone.classList.remove('border-green-400', 'bg-green-50');
+  if (e.dataTransfer.files[0]) processFile(e.dataTransfer.files[0]);
+});
+fileInput.addEventListener('change', e => {
+  if (e.target.files[0]) processFile(e.target.files[0]);
+});
+
+// ─────────────────────────────────────────────
+// FILE READING & PROCESSING
+// ─────────────────────────────────────────────
+function processFile(file) {
+  setStatus('loading', 'กำลังอ่านไฟล์ <span class="animate-pulse">…</span>');
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const wb = XLSX.read(new Uint8Array(e.target.result), { type: 'array', raw: false });
+      buildOutput(wb);
+    } catch (err) {
+      setStatus('error', 'อ่านไฟล์ไม่สำเร็จ: ' + escHtml(err.message));
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function buildOutput(wb) {
+  // ── 1. Find year-named sheets (Buddhist calendar 2500+ or CE 2000+)
+  const yearSheetNames = wb.SheetNames
+    .filter(n => /^(25\d{2}|20\d{2})$/.test(n.trim()))
+    .sort();
+
+  if (yearSheetNames.length === 0) {
+    setStatus('error', 'ไม่พบ Sheet ที่ชื่อเป็นปี (เช่น 2562, 2563, 2564) ในไฟล์นี้<br>กรุณาตรวจสอบว่าชื่อ Sheet เป็นตัวเลขปีเท่านั้น');
+    return;
+  }
+
+  inputYears = yearSheetNames;
+  setStatus('loading', `พบข้อมูล ${yearSheetNames.length} ปี: ${yearSheetNames.join(', ')} — กำลังประมวลผล…`);
+
+  // ── 2. Parse each year sheet → patientMap
+  // Key: OPD No. (stable patient id); fallback: name
+  // Value: { name, opd, years: { "2562": {idYear,fee,date,treat} } }
+  const patientMap = {};
+
+  yearSheetNames.forEach(yearStr => {
+    const rows = XLSX.utils.sheet_to_json(wb.Sheets[yearStr], { header: 1, defval: '' });
+    const hi   = detectHeaderRow(rows);
+    const hdrs = rows[hi].map(h => String(h).trim().toLowerCase());
+
+    const C = {
+      no:     colIdx(hdrs, ['no']),
+      name:   colIdx(hdrs, ['ชื่อลูกค้า', 'ชื่อ-นามสกุล', 'ชื่อ', 'name', 'customer']),
+      opd:    colIdx(hdrs, ['opd no.', 'opd no', 'opd', 'opdno']),
+      idYear: colIdx(hdrs, ['id-year', 'id year', 'idyear', 'id-ปี', 'id_year']),
+      fee:    colIdx(hdrs, ['fee', 'ค่าบริการ', 'ราคา', 'amount']),
+      date:   colIdx(hdrs, ['date', 'วันที่', 'วันที่รับ']),
+      treat:  colIdx(hdrs, ['treat', 'treatment', 'การรักษา']),
+    };
+
+    for (let i = hi + 1; i < rows.length; i++) {
+      const row = rows[i];
+      if (!row || row.every(c => c === '' || c === null || c === undefined)) continue;
+
+      const name   = C.name   >= 0 ? String(row[C.name]   || '').trim() : '';
+      const opd    = C.opd    >= 0 ? String(row[C.opd]    || '').trim() : '';
+      const idYear = C.idYear >= 0 ? String(row[C.idYear]  || '').trim() : '';
+      const fee    = C.fee    >= 0 ? row[C.fee]    : '';
+      const date   = C.date   >= 0 ? row[C.date]   : '';
+      const treat  = C.treat  >= 0 ? row[C.treat]  : '';
+
+      if (!name && !opd) continue;
+
+      const key = opd || name;
+
+      if (!patientMap[key]) {
+        patientMap[key] = { name, opd, years: {} };
+      }
+      // Update name if blank
+      if (!patientMap[key].name && name) patientMap[key].name = name;
+      if (!patientMap[key].opd  && opd)  patientMap[key].opd  = opd;
+
+      // Keep latest entry per year (in case of duplicates within same sheet)
+      patientMap[key].years[yearStr] = { idYear, fee, date, treat };
+    }
+  });
+
+  // ── 3. Group patients by (totalYears, latestYear)
+  const groups = {}; // "มาXปี+YY" → [patientRow]
+
+  Object.values(patientMap).forEach(p => {
+    const visitedYears = Object.keys(p.years).sort();
+    const totalYears   = visitedYears.length;
+    const latestYear   = visitedYears[visitedYears.length - 1];
+    const latestYY     = latestYear.slice(-2); // e.g. "68"
+    const prevYear     = visitedYears.length >= 2
+      ? visitedYears[visitedYears.length - 2].slice(-2)
+      : '';
+
+    const groupKey = `มา${totalYears}ปี+${latestYY}`;
+    if (!groups[groupKey]) groups[groupKey] = [];
+
+    const d = p.years[latestYear];
+    groups[groupKey].push({
+      name: p.name,
+      opd:  p.opd,
+      idYear: d.idYear,
+      fee:    d.fee,
+      date:   d.date,
+      treat:  d.treat,
+      totalYears,
+      latestYY,
+      prevYear,
+    });
+  });
+
+  // ── 4. Sort groups: most years first → latest year first
+  const sortedKeys = Object.keys(groups).sort((a, b) => {
+    const ay = parseInt(a.match(/มา(\d+)ปี/)[1]);
+    const by = parseInt(b.match(/มา(\d+)ปี/)[1]);
+    if (ay !== by) return by - ay;
+    const al = parseInt(a.match(/\+(\d+)/)[1]);
+    const bl = parseInt(b.match(/\+(\d+)/)[1]);
+    return bl - al;
+  });
+
+  // ── 5. Sort rows within each group by OPD No. / name
+  outputSheets = sortedKeys.map(key => ({
+    name: key,
+    rows: groups[key].sort((a, b) =>
+      (a.opd || a.name || '').localeCompare(b.opd || b.name || '', 'th')
+    ),
+  }));
+
+  const totalPatients = Object.keys(patientMap).length;
+  setStatus('success',
+    `ประมวลผลสำเร็จ — คนไข้ทั้งหมด <strong>${totalPatients}</strong> คน | ${outputSheets.length} กลุ่ม`);
+
+  renderResult();
+}
+
+// ─────────────────────────────────────────────
+// HELPERS
+// ─────────────────────────────────────────────
+function detectHeaderRow(rows) {
+  const kw = ['ชื่อ', 'opd', 'fee', 'date', 'treat', 'no', 'id'];
+  for (let i = 0; i < Math.min(rows.length, 6); i++) {
+    const s = (rows[i] || []).join(' ').toLowerCase();
+    if (kw.filter(k => s.includes(k)).length >= 3) return i;
+  }
+  return 0;
+}
+
+function colIdx(headers, candidates) {
+  for (const c of candidates) {
+    const i = headers.findIndex(h => h.includes(c.toLowerCase()));
+    if (i >= 0) return i;
+  }
+  return -1;
+}
+
+function escHtml(s) {
+  return String(s ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
+// ─────────────────────────────────────────────
+// UI — STATUS BOX
+// ─────────────────────────────────────────────
+function setStatus(type, html) {
+  const box = document.getElementById('status-box');
+  const styles = {
+    loading: 'bg-blue-50  border-blue-200  text-blue-800',
+    success: 'bg-green-50 border-green-200 text-green-800',
+    error:   'bg-red-50   border-red-200   text-red-700',
+  };
+  box.innerHTML = `<div class="rounded-xl border p-4 text-sm ${styles[type]}">${html}</div>`;
+  box.classList.remove('hidden');
+}
+
+// ─────────────────────────────────────────────
+// UI — RESULT TABLE
+// ─────────────────────────────────────────────
+function renderResult() {
+  document.getElementById('result-card').classList.remove('hidden');
+
+  const total = outputSheets.reduce((s, g) => s + g.rows.length, 0);
+  document.getElementById('summary-text').textContent =
+    `${total} คน | ${outputSheets.length} กลุ่ม`;
+
+  // Render tabs
+  const tabsEl = document.getElementById('sheet-tabs');
+  tabsEl.innerHTML = outputSheets.map((s, i) =>
+    `<button onclick="switchTab(${i})" id="tab-btn-${i}"
+      class="px-4 py-2.5 text-sm whitespace-nowrap transition-colors ${i === 0 ? 'tab-active' : 'tab-inactive'}">
+      ${escHtml(s.name)}&nbsp;<span class="text-xs opacity-70">(${s.rows.length})</span>
+    </button>`
+  ).join('');
+
+  activeTabIdx = 0;
+  renderTable(0);
+
+  document.getElementById('result-card').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function switchTab(idx) {
+  document.querySelectorAll('[id^="tab-btn-"]').forEach((el, i) => {
+    el.className = el.className.replace('tab-active', '').replace('tab-inactive', '').trim();
+    el.classList.add(i === idx ? 'tab-active' : 'tab-inactive');
+  });
+  activeTabIdx = idx;
+  renderTable(idx);
+}
+
+function renderTable(idx) {
+  const sheet = outputSheets[idx];
+  const COLS = ['No', 'ชื่อลูกค้า', 'OPD No.', 'ID-Year', 'Fee', 'Date', 'Treat', 'มาที่ปี', 'ปีล่าสุด'];
+
+  let html = `<thead><tr>` +
+    COLS.map(h =>
+      `<th class="bg-green-600 text-white px-3 py-2 text-left text-xs font-semibold whitespace-nowrap sticky top-0">${escHtml(h)}</th>`
+    ).join('') +
+    `</tr></thead><tbody>`;
+
+  sheet.rows.slice(0, 50).forEach((r, i) => {
+    html += `<tr class="border-b border-gray-50 hover:bg-green-50">
+      <td class="px-3 py-1.5 text-gray-400 text-xs text-right">${i + 1}</td>
+      <td class="px-3 py-1.5 font-medium text-gray-800 whitespace-nowrap">${escHtml(r.name || '—')}</td>
+      <td class="px-3 py-1.5 text-gray-600 text-xs font-mono whitespace-nowrap">${escHtml(r.opd || '—')}</td>
+      <td class="px-3 py-1.5 text-gray-600 text-xs text-center">${escHtml(r.idYear)}</td>
+      <td class="px-3 py-1.5 text-gray-600 text-xs text-right">${escHtml(String(r.fee ?? ''))}</td>
+      <td class="px-3 py-1.5 text-gray-600 text-xs font-mono">${escHtml(String(r.date ?? ''))}</td>
+      <td class="px-3 py-1.5 text-gray-600 text-xs text-center">${escHtml(String(r.treat ?? ''))}</td>
+      <td class="px-3 py-1.5 text-center font-bold text-green-700">${r.totalYears}</td>
+      <td class="px-3 py-1.5 text-center text-gray-500 text-xs">${r.prevYear || ''}</td>
+    </tr>`;
+  });
+
+  html += '</tbody>';
+  document.getElementById('preview-table').innerHTML = html;
+}
+
+// ─────────────────────────────────────────────
+// EXCEL EXPORT
+// ─────────────────────────────────────────────
+function downloadExcel() {
+  if (!outputSheets.length) return;
+
+  const wb = XLSX.utils.book_new();
+  const HEADERS = ['No', 'ชื่อลูกค้า', 'OPD No.', 'ID-Year', 'Fee', 'Date', 'Treat', 'มาที่ปี', 'ปีล่าสุด'];
+
+  outputSheets.forEach(sheet => {
+    const data = [HEADERS];
+    sheet.rows.forEach((r, i) => {
+      data.push([
+        i + 1,
+        r.name    || '',
+        r.opd     || '',
+        r.idYear  || '',
+        r.fee     ?? '',
+        r.date    ?? '',
+        r.treat   ?? '',
+        r.totalYears,
+        r.prevYear || '',
+      ]);
+    });
+
+    const ws = XLSX.utils.aoa_to_sheet(data);
+    ws['!cols'] = [
+      { wch: 5 },   // No
+      { wch: 28 },  // ชื่อ
+      { wch: 11 },  // OPD
+      { wch: 8 },   // ID-Year
+      { wch: 6 },   // Fee
+      { wch: 10 },  // Date
+      { wch: 6 },   // Treat
+      { wch: 7 },   // มาที่ปี
+      { wch: 7 },   // ปีล่าสุด
+    ];
+
+    // Limit sheet name to 31 chars (Excel limit)
+    XLSX.utils.book_append_sheet(wb, ws, sheet.name.slice(0, 31));
+  });
+
+  const minY = inputYears[0] || '';
+  const maxY = (inputYears[inputYears.length - 1] || '').slice(-2);
+  XLSX.writeFile(wb, `สปส ${minY}-${maxY}.xlsx`);
+}
+</script>
+</body>
+</html>
