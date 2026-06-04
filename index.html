@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>PDC Dental - ระบบสรุปประกันสังคม</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <style>
     * { font-family: 'Sarabun', sans-serif; }
@@ -333,19 +333,19 @@ function renderTable(idx) {
   const COLS = ['No', 'ชื่อลูกค้า', 'OPD No.', 'ID-Year', 'Fee', 'Date', 'Treat', 'มาที่ปี', 'ปีล่าสุด'];
 
   let html = `<thead><tr>` +
-    COLS.map(h =>
-      `<th class="bg-green-600 text-white px-3 py-2 text-left text-xs font-semibold whitespace-nowrap sticky top-0">${escHtml(h)}</th>`
+    COLS.map((h, colIdx) =>
+      `<th class="bg-green-600 text-white px-3 py-2 ${colIdx === 1 ? 'text-left' : 'text-center'} text-xs font-semibold whitespace-nowrap sticky top-0">${escHtml(h)}</th>`
     ).join('') +
     `</tr></thead><tbody>`;
 
   sheet.rows.slice(0, 50).forEach((r, i) => {
     html += `<tr class="border-b border-gray-50 hover:bg-green-50">
-      <td class="px-3 py-1.5 text-gray-400 text-xs text-right">${i + 1}</td>
+      <td class="px-3 py-1.5 text-gray-400 text-xs text-center">${i + 1}</td>
       <td class="px-3 py-1.5 font-medium text-gray-800 whitespace-nowrap">${escHtml(r.name || '—')}</td>
-      <td class="px-3 py-1.5 text-gray-600 text-xs font-mono whitespace-nowrap">${escHtml(r.opd || '—')}</td>
+      <td class="px-3 py-1.5 text-gray-600 text-xs font-mono whitespace-nowrap text-center">${escHtml(r.opd || '—')}</td>
       <td class="px-3 py-1.5 text-gray-600 text-xs text-center">${escHtml(r.idYear)}</td>
-      <td class="px-3 py-1.5 text-gray-600 text-xs text-right">${escHtml(String(r.fee ?? ''))}</td>
-      <td class="px-3 py-1.5 text-gray-600 text-xs font-mono">${escHtml(String(r.date ?? ''))}</td>
+      <td class="px-3 py-1.5 text-gray-600 text-xs text-center">${escHtml(String(r.fee ?? ''))}</td>
+      <td class="px-3 py-1.5 text-gray-600 text-xs font-mono text-center">${escHtml(String(r.date ?? ''))}</td>
       <td class="px-3 py-1.5 text-gray-600 text-xs text-center">${escHtml(String(r.treat ?? ''))}</td>
       <td class="px-3 py-1.5 text-center font-bold text-green-700">${r.totalYears}</td>
       <td class="px-3 py-1.5 text-center text-gray-500 text-xs">${r.prevYear || ''}</td>
@@ -354,6 +354,20 @@ function renderTable(idx) {
 
   html += '</tbody>';
   document.getElementById('preview-table').innerHTML = html;
+}
+
+
+function applyDownloadAlignment(ws, rowCount, colCount) {
+  const centerStyle = { alignment: { horizontal: 'center', vertical: 'center' } };
+  const patientNameStyle = { alignment: { horizontal: 'left', vertical: 'center' } };
+
+  for (let row = 0; row < rowCount; row++) {
+    for (let col = 0; col < colCount; col++) {
+      const cellRef = XLSX.utils.encode_cell({ r: row, c: col });
+      if (!ws[cellRef]) continue;
+      ws[cellRef].s = col === 1 ? patientNameStyle : centerStyle;
+    }
+  }
 }
 
 // ─────────────────────────────────────────────
@@ -382,6 +396,8 @@ function downloadExcel() {
     });
 
     const ws = XLSX.utils.aoa_to_sheet(data);
+    applyDownloadAlignment(ws, data.length, HEADERS.length);
+
     ws['!cols'] = [
       { wch: 5 },   // No
       { wch: 28 },  // ชื่อ
@@ -400,7 +416,7 @@ function downloadExcel() {
 
   const minY = inputYears[0] || '';
   const maxY = (inputYears[inputYears.length - 1] || '').slice(-2);
-  XLSX.writeFile(wb, `สปส ${minY}-${maxY}.xlsx`);
+  XLSX.writeFile(wb, `สปส ${minY}-${maxY}.xlsx`, { cellStyles: true });
 }
 </script>
 </body>
