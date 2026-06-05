@@ -527,11 +527,41 @@ const PATIENT_SUMMARY_HEADERS = [
   ['Follow-up Reason', 'เหตุผลภาษาไทย'],
 ];
 
-function sheetFromObjects(headers, rows, mapper) {
+function freezeAndFilterHeaderRows(ws, headerRowCount = 1) {
+  if (!ws['!ref']) return ws;
+
+  const range = XLSX.utils.decode_range(ws['!ref']);
+  const lastHeaderRow = Math.max(0, headerRowCount - 1);
+  ws['!autofilter'] = {
+    ref: XLSX.utils.encode_range({
+      s: { r: lastHeaderRow, c: range.s.c },
+      e: range.e,
+    }),
+  };
+
+  // SheetJS-compatible metadata for spreadsheet apps that honor frozen panes.
+  ws['!freeze'] = {
+    xSplit: 0,
+    ySplit: headerRowCount,
+    topLeftCell: `A${headerRowCount + 1}`,
+    activePane: 'bottomLeft',
+    state: 'frozen',
+  };
+  ws['!views'] = [{
+    state: 'frozen',
+    ySplit: headerRowCount,
+    topLeftCell: `A${headerRowCount + 1}`,
+    activePane: 'bottomLeft',
+  }];
+  return ws;
+}
+
+function sheetFromObjects(headers, rows, mapper, options = {}) {
   const data = [headers.map(h => Array.isArray(h) ? h[0] : h)];
   if (headers.some(h => Array.isArray(h))) data.push(headers.map(h => Array.isArray(h) ? h[1] : ''));
   rows.forEach((r, i) => data.push(mapper(r, i)));
-  return XLSX.utils.aoa_to_sheet(data);
+  const ws = XLSX.utils.aoa_to_sheet(data);
+  return freezeAndFilterHeaderRows(ws, options.headerRows || 1);
 }
 
 function downloadPatientExcel() {
@@ -545,7 +575,7 @@ function downloadPatientExcel() {
     r.lifetimeFee, r.lifetimeVisitCount, r.activeYearCount, r.longestRelationshipDoctor,
     r.longestRelationshipYearsCount, r.longestRelationshipYearRange, r.mainDoctorLatestYear, r.mainDoctorLifetime,
     r.doctorLoyaltyType, r.returnPattern, r.followUpPriority, r.followUpReason,
-  ]);
+  ], { headerRows: 2 });
   summaryWs['!cols'] = PATIENT_SUMMARY_HEADERS.map((_, i) => ({ wch: i === 0 ? 28 : i === 29 ? 42 : 16 }));
   XLSX.utils.book_append_sheet(wb, summaryWs, 'Patient Summary');
 

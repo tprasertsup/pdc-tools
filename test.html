@@ -359,6 +359,39 @@ test('many years: 7-year patient → มา7ปี+68', () => {
 });
 
 // ─────────────────────────────────────────────
+// TESTS: buildFromDoctorSheets – follow-up priority
+// ─────────────────────────────────────────────
+test('zero-fee visit remains a data flag but does not force high data recheck priority', () => {
+  const data = {
+    'หมอเอ': [
+      ['No', 'ชื่อลูกค้า', 'OPD No.', 'Fee', 'Last Year'],
+      [1, 'คนไข้ Fee ศูนย์', '0001', 0, 2568],
+    ],
+  };
+
+  const { patientSummaries, dataIssues } = buildFromDoctorSheets(data);
+  expect(patientSummaries[0].dataFlags).toContain('มี visit ค่า Fee = 0');
+  expect(patientSummaries[0].followUpPriority).toBe('กลาง');
+  expect(patientSummaries[0].followUpReason).toBe('คนไข้ใหม่ ควรดูแลให้กลับมาต่อเนื่อง');
+  expect(dataIssues).toHaveLength(0);
+});
+
+test('non-zero-fee data recheck flags can still force high priority', () => {
+  const data = {
+    'หมอเอ': [
+      ['No', 'ชื่อลูกค้า', 'OPD No.', 'Fee', 'Last Year'],
+      [1, 'คนไข้ OPD ซ้ำ', '0001', 1000, 2568],
+      [2, 'คนไข้ OPD ซ้ำ', '0002', 1000, 2568],
+    ],
+  };
+
+  const { patientSummaries, dataIssues } = buildFromDoctorSheets(data);
+  expect(patientSummaries[0].dataFlags).toContain('พบ OPD หลายเลขในชื่อเดียวกัน');
+  expect(patientSummaries[0].followUpPriority).toBe('สูง');
+  expect(dataIssues).toHaveLength(1);
+});
+
+// ─────────────────────────────────────────────
 // RUN ALL TESTS
 // ─────────────────────────────────────────────
 window.addEventListener('load', () => {

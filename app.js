@@ -247,7 +247,13 @@ function getThaiPriority(summary, datasetLatestYear) {
   const highValue = summary.lifetimeFee >= 50000 || summary.latestYearFee >= 15000;
   const loyal = summary.maxConsecutiveYears >= 3 || summary.activeYearCount >= 3;
 
-  if (summary.dataFlags) return { priority: 'สูง', reason: `ควรตรวจสอบข้อมูลก่อนติดตาม: ${summary.dataFlags}` };
+  const needsDataRecheck = String(summary.dataFlags || '')
+    .split(',')
+    .map(flag => flag.trim())
+    .filter(Boolean)
+    .some(flag => !flag.includes('Fee = 0'));
+
+  if (needsDataRecheck) return { priority: 'สูง', reason: `ควรตรวจสอบข้อมูลก่อนติดตาม: ${summary.dataFlags}` };
   if (summary.status === 'Lost' && highValue) return { priority: 'สูง', reason: 'คนไข้มูลค่าสูงไม่ได้กลับมาหลายปี ควรติดตาม' };
   if (summary.status === 'At Risk' && (highValue || loyal)) return { priority: 'สูง', reason: 'คนไข้ประจำหรือมูลค่าสูงไม่มาในปีล่าสุด ควรติดตาม' };
   if (summary.returnPattern === 'Returning') return { priority: 'กลาง', reason: 'คนไข้กลับมาหลังเว้นช่วง ควรรักษาความสัมพันธ์' };
