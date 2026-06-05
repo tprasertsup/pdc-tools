@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PDC Dental - ระบบสรุปประกันสังคม</title>
+  <title>PDC Dental Clinic Tools</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="app.js"></script>
@@ -27,15 +27,18 @@
           d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
       </svg>
     </div>
-    <h1 class="text-2xl font-bold text-gray-800">PDC Dental Clinic</h1>
-    <p class="text-gray-500 mt-1">ระบบสรุปประกันสังคม (สปส) — จัดกลุ่มตามจำนวนปีที่มา</p>
+    <h1 class="text-2xl font-bold text-gray-800">PDC Dental Clinic Tools</h1>
+    <p class="text-gray-500 mt-1">เครื่องมือสำหรับสรุปและแปลงข้อมูล Excel ของ PDC Dental Clinic</p>
   </div>
 
   <!-- Upload Card -->
   <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-5">
     <div class="flex items-center gap-2 mb-4">
       <span class="w-7 h-7 bg-green-600 text-white text-xs font-bold rounded-full flex items-center justify-center">1</span>
-      <h2 class="font-semibold text-gray-800">อัพโหลดไฟล์ประกันสังคมรายปี</h2>
+      <div>
+        <h2 class="font-semibold text-gray-800">สรุปประกันสังคมจาก Sheet รายปี</h2>
+        <p class="text-xs text-gray-500 mt-1">ใช้กับไฟล์เดิมที่แต่ละ Sheet คือปี เช่น 2562, 2563, 2564 เพื่อจัดกลุ่มคนไข้ตามจำนวนปีที่มา</p>
+      </div>
     </div>
 
     <div id="drop-zone"
@@ -48,7 +51,7 @@
       <p class="text-gray-700 font-medium">ลากไฟล์มาวางที่นี่ หรือ
         <span class="text-green-600 underline underline-offset-2">คลิกเพื่อเลือกไฟล์</span>
       </p>
-      <p class="text-xs text-gray-400 mt-1">รองรับ .xls, .xlsx — ไฟล์เดียวที่มีหลาย Sheet แยกตามปี (เช่น 2562, 2563, …)</p>
+      <p class="text-xs text-gray-400 mt-1">รองรับ .xls, .xlsx — ไฟล์เดียวที่มีหลาย Sheet แยกตามปี เช่น 2562, 2563, …</p>
       <input type="file" id="file-input" accept=".xls,.xlsx" class="hidden">
     </div>
 
@@ -60,8 +63,8 @@
     <div class="flex items-start justify-between mb-5">
       <div>
         <div class="flex items-center gap-2 mb-1">
-          <span class="w-7 h-7 bg-green-600 text-white text-xs font-bold rounded-full flex items-center justify-center">2</span>
-          <h2 class="font-semibold text-gray-800">ผลลัพธ์</h2>
+          <span class="w-7 h-7 bg-green-600 text-white text-xs font-bold rounded-full flex items-center justify-center">ผล</span>
+          <h2 class="font-semibold text-gray-800">ผลลัพธ์สรุปประกันสังคม</h2>
         </div>
         <p id="summary-text" class="text-sm text-gray-500 ml-9"></p>
       </div>
@@ -88,6 +91,94 @@
       แสดง 50 แถวแรก — ดาวน์โหลด Excel เพื่อดูข้อมูลครบทั้งหมด
     </p>
   </div>
+
+
+  <!-- Patient Follow-up Upload Card -->
+  <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mt-8 mb-5">
+    <div class="flex items-center gap-2 mb-4">
+      <span class="w-7 h-7 bg-blue-600 text-white text-xs font-bold rounded-full flex items-center justify-center">2</span>
+      <div>
+        <h2 class="font-semibold text-gray-800">สรุปคนไข้จาก Sheet ตามชื่อหมอ</h2>
+        <p class="text-xs text-gray-500 mt-1">ใช้กับไฟล์ที่ 1 row = 1 visit, แต่ละ Sheet คือชื่อหมอ และมีคอลัมน์ ชื่อลูกค้า, OPD No., Fee, Last Year/Year</p>
+      </div>
+    </div>
+
+    <div id="patient-drop-zone"
+      class="border-2 border-dashed border-blue-200 rounded-xl p-10 text-center cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition-all group">
+      <svg class="w-12 h-12 text-blue-300 group-hover:text-blue-500 mx-auto mb-3 transition-colors"
+        fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+          d="M12 4v16m8-8H4"/>
+      </svg>
+      <p class="text-gray-700 font-medium">ลากไฟล์มาวางที่นี่ หรือ
+        <span class="text-blue-600 underline underline-offset-2">คลิกเพื่อเลือกไฟล์</span>
+      </p>
+      <p class="text-xs text-gray-400 mt-1">รองรับ .xls, .xlsx — output จะรวมคนไข้ชื่อเดียวกันและสร้าง Excel สำหรับติดตามคนไข้</p>
+      <input type="file" id="patient-file-input" accept=".xls,.xlsx" class="hidden">
+    </div>
+
+    <div class="mt-5 grid gap-3 md:grid-cols-3 text-xs text-gray-600">
+      <div class="rounded-xl bg-blue-50 border border-blue-100 p-3">
+        <p class="font-semibold text-blue-800 mb-1">Patient Status</p>
+        <p><strong>New</strong> = ปีล่าสุดในไฟล์เป็นปีแรกของคนไข้</p>
+        <p><strong>Active</strong> = มาปีล่าสุดและเคยมาปีก่อน</p>
+        <p><strong>At Risk</strong> = ไม่มาปีล่าสุด แต่มาปีก่อนหน้า</p>
+        <p><strong>Lost</strong> = ไม่มามากกว่า 1 ปี</p>
+      </div>
+      <div class="rounded-xl bg-slate-50 border border-slate-100 p-3">
+        <p class="font-semibold text-slate-800 mb-1">Return Pattern</p>
+        <p><strong>Consistent</strong> = มาต่อเนื่องอย่างน้อย 3 ปี</p>
+        <p><strong>Returning</strong> = กลับมาหลังเว้นช่วง</p>
+        <p><strong>One-time</strong> = พบในข้อมูลแค่ปีเดียว</p>
+      </div>
+      <div class="rounded-xl bg-amber-50 border border-amber-100 p-3">
+        <p class="font-semibold text-amber-800 mb-1">Follow-up Priority</p>
+        <p>คำนวณด้วย rule แบบ static จากยอด fee, ความต่อเนื่อง, ปีล่าสุดที่มา และ data flags</p>
+        <p>เหตุผลจะแสดงเป็นภาษาไทยใน column <strong>Follow-up Reason</strong></p>
+      </div>
+    </div>
+
+    <div id="patient-status-box" class="mt-4 hidden"></div>
+  </div>
+
+  <!-- Patient Follow-up Result Card -->
+  <div id="patient-result-card" class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hidden">
+    <div class="flex items-start justify-between mb-5">
+      <div>
+        <div class="flex items-center gap-2 mb-1">
+          <span class="w-7 h-7 bg-blue-600 text-white text-xs font-bold rounded-full flex items-center justify-center">ผล</span>
+          <h2 class="font-semibold text-gray-800">ผลลัพธ์สรุปคนไข้</h2>
+        </div>
+        <p id="patient-summary-text" class="text-sm text-gray-500 ml-9"></p>
+      </div>
+      <button onclick="downloadPatientExcel()"
+        class="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white px-5 py-2.5 rounded-xl font-medium transition-colors shrink-0 ml-4">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+        </svg>
+        ดาวน์โหลด Patient Follow-up Excel
+      </button>
+    </div>
+
+    <div class="rounded-xl bg-slate-50 border border-slate-100 p-4 mb-4 text-xs text-gray-600">
+      <p class="font-semibold text-gray-800 mb-2">วิธีอ่านผลลัพธ์หลัก</p>
+      <div class="grid gap-2 md:grid-cols-2">
+        <p><strong>ทำต่อเนื่อง</strong> = จำนวนปีที่คนไข้มาติดกันจนถึงปีล่าสุดของคนไข้คนนั้น</p>
+        <p><strong>Max ต่อเนื่อง</strong> = ช่วงที่เคยมาติดต่อกันนานที่สุด ไม่จำเป็นต้องรวมปีล่าสุด</p>
+        <p><strong>หมอปีล่าสุด</strong> = รายชื่อหมอทั้งหมดที่คนไข้ทำด้วยในปีล่าสุดของคนไข้</p>
+        <p><strong>Priority</strong> = ความสำคัญในการติดตามจาก rule คงที่ ไม่ใช้ AI/LLM</p>
+      </div>
+    </div>
+
+    <div class="overflow-x-auto mt-0">
+      <table id="patient-preview-table" class="w-full text-sm border-collapse min-w-max"></table>
+    </div>
+    <p class="text-xs text-gray-400 mt-3 text-center">
+      แสดง 50 คนแรกจาก Patient Summary — ดาวน์โหลด Excel เพื่อดูทุก Sheet ครบทั้งหมด
+    </p>
+  </div>
+
 
 </div><!-- end container -->
 
@@ -297,6 +388,193 @@ function downloadExcel() {
   const maxY = (inputYears[inputYears.length - 1] || '').slice(-2);
   XLSX.writeFile(wb, `สปส ${minY}-${maxY}.xlsx`);
 }
+
+// ─────────────────────────────────────────────
+// PATIENT FOLLOW-UP FEATURE — DOCTOR SHEETS
+// ─────────────────────────────────────────────
+let patientWorkbookData = null;
+
+const patientDropZone = document.getElementById('patient-drop-zone');
+const patientFileInput = document.getElementById('patient-file-input');
+
+patientDropZone.addEventListener('click', () => patientFileInput.click());
+patientDropZone.addEventListener('dragover', e => {
+  e.preventDefault();
+  patientDropZone.classList.add('border-blue-400', 'bg-blue-50');
+});
+patientDropZone.addEventListener('dragleave', () => {
+  patientDropZone.classList.remove('border-blue-400', 'bg-blue-50');
+});
+patientDropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  patientDropZone.classList.remove('border-blue-400', 'bg-blue-50');
+  if (e.dataTransfer.files[0]) processPatientFile(e.dataTransfer.files[0]);
+});
+patientFileInput.addEventListener('change', e => {
+  if (e.target.files[0]) processPatientFile(e.target.files[0]);
+});
+
+function processPatientFile(file) {
+  setPatientStatus('loading', 'กำลังอ่านไฟล์ <span class="animate-pulse">…</span>');
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const wb = XLSX.read(new Uint8Array(e.target.result), { type: 'array', raw: false });
+      buildPatientOutput(wb);
+    } catch (err) {
+      setPatientStatus('error', 'อ่านไฟล์ไม่สำเร็จ: ' + escHtml(err.message));
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function buildPatientOutput(wb) {
+  const doctorSheets = {};
+  wb.SheetNames.forEach(sheetName => {
+    doctorSheets[sheetName] = XLSX.utils.sheet_to_json(wb.Sheets[sheetName], { header: 1, defval: '' });
+  });
+
+  patientWorkbookData = buildFromDoctorSheets(doctorSheets);
+
+  if (!patientWorkbookData.patientCount) {
+    setPatientStatus('error', 'ไม่พบข้อมูลคนไข้ที่อ่านได้ กรุณาตรวจสอบว่ามีคอลัมน์ ชื่อลูกค้า และ Last Year/Year');
+    return;
+  }
+
+  const yearText = patientWorkbookData.datasetYears.join(', ');
+  setPatientStatus('success',
+    `ประมวลผลสำเร็จ — คนไข้ <strong>${patientWorkbookData.patientCount}</strong> คน | visit <strong>${patientWorkbookData.visitCount}</strong> rows | ปีที่พบ: ${yearText}`);
+  renderPatientResult();
+}
+
+function setPatientStatus(type, html) {
+  const box = document.getElementById('patient-status-box');
+  const styles = {
+    loading: 'bg-blue-50  border-blue-200  text-blue-800',
+    success: 'bg-green-50 border-green-200 text-green-800',
+    error:   'bg-red-50   border-red-200   text-red-700',
+  };
+  box.innerHTML = `<div class="rounded-xl border p-4 text-sm ${styles[type]}">${html}</div>`;
+  box.classList.remove('hidden');
+}
+
+function formatMoney(n) {
+  return Number(n || 0).toLocaleString('th-TH', { maximumFractionDigits: 0 });
+}
+
+function renderPatientResult() {
+  document.getElementById('patient-result-card').classList.remove('hidden');
+  document.getElementById('patient-summary-text').textContent =
+    `${patientWorkbookData.patientCount} คน | ${patientWorkbookData.visitCount} visits | ปีล่าสุดในไฟล์ ${patientWorkbookData.datasetLatestYear}`;
+
+  const COLS = ['No', 'ชื่อคนไข้', 'OPD No.', 'สถานะ', 'ปีล่าสุด', 'ทำต่อเนื่อง', 'Max ต่อเนื่อง', 'Fee ปีล่าสุด', 'ครั้งปีล่าสุด', 'หมอปีล่าสุด', 'Priority', 'เหตุผล'];
+  let html = `<thead><tr>` + COLS.map(h =>
+    `<th class="bg-blue-600 text-white px-3 py-2 text-left text-xs font-semibold whitespace-nowrap sticky top-0">${escHtml(h)}</th>`
+  ).join('') + `</tr></thead><tbody>`;
+
+  patientWorkbookData.patientSummaries.slice(0, 50).forEach((r, i) => {
+    html += `<tr class="border-b border-gray-50 hover:bg-blue-50">
+      <td class="px-3 py-1.5 text-gray-400 text-xs text-right">${i + 1}</td>
+      <td class="px-3 py-1.5 font-medium text-gray-800 whitespace-nowrap">${escHtml(r.patientName)}</td>
+      <td class="px-3 py-1.5 text-gray-600 text-xs font-mono whitespace-nowrap">${escHtml(r.opd || '—')}</td>
+      <td class="px-3 py-1.5 text-gray-700 text-xs whitespace-nowrap">${escHtml(r.status)}</td>
+      <td class="px-3 py-1.5 text-center text-gray-700 text-xs">${r.latestYear}</td>
+      <td class="px-3 py-1.5 text-center font-bold text-blue-700">${r.currentConsecutiveYears}</td>
+      <td class="px-3 py-1.5 text-center text-gray-700">${r.maxConsecutiveYears}</td>
+      <td class="px-3 py-1.5 text-right text-gray-700">${formatMoney(r.latestYearFee)}</td>
+      <td class="px-3 py-1.5 text-center text-gray-700">${r.latestYearVisitCount}</td>
+      <td class="px-3 py-1.5 text-gray-600 text-xs whitespace-nowrap">${escHtml(r.latestYearDoctors)}</td>
+      <td class="px-3 py-1.5 font-semibold text-xs whitespace-nowrap ${r.followUpPriority === 'สูง' ? 'text-red-600' : r.followUpPriority === 'กลาง' ? 'text-amber-600' : 'text-green-600'}">${escHtml(r.followUpPriority)}</td>
+      <td class="px-3 py-1.5 text-gray-600 text-xs">${escHtml(r.followUpReason)}</td>
+    </tr>`;
+  });
+
+  html += '</tbody>';
+  document.getElementById('patient-preview-table').innerHTML = html;
+  document.getElementById('patient-result-card').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+const PATIENT_SUMMARY_HEADERS = [
+  ['Patient Name', 'ชื่อคนไข้'],
+  ['OPD No.', 'OPD หลัก'],
+  ['All OPD Nos.', 'OPD ทั้งหมดที่พบ'],
+  ['Data Flags', 'หมายเหตุข้อมูล'],
+  ['Patient Status', 'สถานะคนไข้'],
+  ['First Visit Year', 'ปีแรกที่พบ'],
+  ['Latest Visit Year', 'ปีล่าสุดที่มา'],
+  ['Previous Visit Year', 'ปีก่อนล่าสุด'],
+  ['Visited Years', 'ปีทั้งหมดที่มา'],
+  ['Current Consecutive Years', 'ทำต่อเนื่องถึงปีล่าสุดกี่ปี'],
+  ['Max Consecutive Years', 'เคยทำต่อเนื่องสูงสุดกี่ปี'],
+  ['Latest Year Fee', 'Fee รวมปีล่าสุด'],
+  ['Latest Year Visit Count', 'จำนวนครั้งปีล่าสุด'],
+  ['Latest Year Doctors', 'หมอปีล่าสุด'],
+  ['Previous Year Fee', 'Fee ปีก่อนล่าสุด'],
+  ['Previous Year Visit Count', 'จำนวนครั้งปีก่อนล่าสุด'],
+  ['Previous Year Doctors', 'หมอปีก่อนล่าสุด'],
+  ['Fee Change Latest vs Previous', 'Fee ปีล่าสุด - ปีก่อนล่าสุด'],
+  ['Lifetime Fee', 'Fee รวมทั้งหมด'],
+  ['Lifetime Visit Count', 'จำนวน visit ทั้งหมด'],
+  ['Active Year Count', 'จำนวนปีที่เคยมา'],
+  ['Longest Relationship Doctor', 'หมอที่ทำด้วยนานสุด'],
+  ['Longest Relationship Years Count', 'ทำกับหมอนั้นกี่ปี'],
+  ['Longest Relationship Year Range', 'ช่วงปีที่ทำกับหมอนั้น'],
+  ['Main Doctor Latest Year', 'หมอหลักปีล่าสุด'],
+  ['Main Doctor Lifetime', 'หมอหลักตลอดข้อมูล'],
+  ['Doctor Loyalty Type', 'ทำกับหมอเดียวหรือหลายหมอ'],
+  ['Return Pattern', 'รูปแบบการกลับมา'],
+  ['Follow-up Priority', 'ความสำคัญในการติดตาม'],
+  ['Follow-up Reason', 'เหตุผลภาษาไทย'],
+];
+
+function sheetFromObjects(headers, rows, mapper) {
+  const data = [headers.map(h => Array.isArray(h) ? h[0] : h)];
+  if (headers.some(h => Array.isArray(h))) data.push(headers.map(h => Array.isArray(h) ? h[1] : ''));
+  rows.forEach((r, i) => data.push(mapper(r, i)));
+  return XLSX.utils.aoa_to_sheet(data);
+}
+
+function downloadPatientExcel() {
+  if (!patientWorkbookData) return;
+
+  const wb = XLSX.utils.book_new();
+  const summaryWs = sheetFromObjects(PATIENT_SUMMARY_HEADERS, patientWorkbookData.patientSummaries, r => [
+    r.patientName, r.opd, r.allOpdNos, r.dataFlags, r.status, r.firstYear, r.latestYear, r.previousYear,
+    r.visitedYears, r.currentConsecutiveYears, r.maxConsecutiveYears, r.latestYearFee, r.latestYearVisitCount,
+    r.latestYearDoctors, r.previousYearFee, r.previousYearVisitCount, r.previousYearDoctors, r.feeChange,
+    r.lifetimeFee, r.lifetimeVisitCount, r.activeYearCount, r.longestRelationshipDoctor,
+    r.longestRelationshipYearsCount, r.longestRelationshipYearRange, r.mainDoctorLatestYear, r.mainDoctorLifetime,
+    r.doctorLoyaltyType, r.returnPattern, r.followUpPriority, r.followUpReason,
+  ]);
+  summaryWs['!cols'] = PATIENT_SUMMARY_HEADERS.map((_, i) => ({ wch: i === 0 ? 28 : i === 29 ? 42 : 16 }));
+  XLSX.utils.book_append_sheet(wb, summaryWs, 'Patient Summary');
+
+  const yearlyHeaders = ['Patient Name', 'OPD No.', 'Year', 'Fee', 'Visit Count', 'Doctors', 'Doctor Count', 'Avg Fee / Visit', 'Zero-Fee Visits', 'Is Latest Year'];
+  XLSX.utils.book_append_sheet(wb, sheetFromObjects(yearlyHeaders, patientWorkbookData.yearlyDetails, r => [
+    r.patientName, r.opd, r.year, r.fee, r.visitCount, r.doctors, r.doctorCount, r.avgFeePerVisit, r.zeroFeeVisits, r.isLatestYear,
+  ]), 'Patient Yearly Detail');
+
+  const relationshipHeaders = ['Patient Name', 'OPD No.', 'Doctor', 'First Year With Doctor', 'Latest Year With Doctor', 'Year Count With Doctor', 'Consecutive Years With Doctor To Latest', 'Max Consecutive Years With Doctor', 'Visit Count With Doctor', 'Fee With Doctor', 'Is Seen In Latest Patient Year', 'Doctor Role'];
+  XLSX.utils.book_append_sheet(wb, sheetFromObjects(relationshipHeaders, patientWorkbookData.doctorRelationships, r => [
+    r.patientName, r.opd, r.doctor, r.firstYearWithDoctor, r.latestYearWithDoctor, r.yearCountWithDoctor,
+    r.consecutiveYearsWithDoctorToLatest, r.maxConsecutiveYearsWithDoctor, r.visitCountWithDoctor,
+    r.feeWithDoctor, r.isSeenInLatestPatientYear, r.doctorRole,
+  ]), 'Doctor Relationship');
+
+  const issueHeaders = ['Issue Type', 'Sheet', 'Row', 'Patient Name', 'OPD No.', 'Detail'];
+  XLSX.utils.book_append_sheet(wb, sheetFromObjects(issueHeaders, patientWorkbookData.dataIssues, r => [
+    r.issueType, r.sheet, r.row, r.patientName, r.opd, r.detail,
+  ]), 'Data Issues');
+
+  const rawHeaders = ['Source Sheet', 'Source Row', 'Source No', 'Patient Name', 'Normalized Patient Key', 'OPD No.', 'Fee', 'Year', 'Doctor'];
+  XLSX.utils.book_append_sheet(wb, sheetFromObjects(rawHeaders, patientWorkbookData.rawRows, r => [
+    r.sourceSheet, r.sourceRow, r.sourceNo, r.patientName, r.patientKey, r.opd, r.fee, r.year, r.doctor,
+  ]), 'Raw Cleaned Data');
+
+  const latest = patientWorkbookData.datasetLatestYear || '';
+  XLSX.writeFile(wb, `patient_follow_up_summary_${latest}.xlsx`);
+}
+
 </script>
 </body>
 </html>
