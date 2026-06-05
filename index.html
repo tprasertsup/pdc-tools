@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PDC Dental - ระบบสรุปประกันสังคม</title>
+  <title>PDC Dental Clinic Tools</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="app.js"></script>
@@ -27,15 +27,18 @@
           d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
       </svg>
     </div>
-    <h1 class="text-2xl font-bold text-gray-800">PDC Dental Clinic</h1>
-    <p class="text-gray-500 mt-1">ระบบสรุปประกันสังคม (สปส) — จัดกลุ่มตามจำนวนปีที่มา</p>
+    <h1 class="text-2xl font-bold text-gray-800">PDC Dental Clinic Tools</h1>
+    <p class="text-gray-500 mt-1">เครื่องมือสำหรับสรุปและแปลงข้อมูล Excel ของ PDC Dental Clinic</p>
   </div>
 
   <!-- Upload Card -->
   <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-5">
     <div class="flex items-center gap-2 mb-4">
       <span class="w-7 h-7 bg-green-600 text-white text-xs font-bold rounded-full flex items-center justify-center">1</span>
-      <h2 class="font-semibold text-gray-800">อัพโหลดไฟล์ประกันสังคมรายปี</h2>
+      <div>
+        <h2 class="font-semibold text-gray-800">สรุปประกันสังคมจาก Sheet รายปี</h2>
+        <p class="text-xs text-gray-500 mt-1">ใช้กับไฟล์เดิมที่แต่ละ Sheet คือปี เช่น 2562, 2563, 2564 เพื่อจัดกลุ่มคนไข้ตามจำนวนปีที่มา</p>
+      </div>
     </div>
 
     <div id="drop-zone"
@@ -48,7 +51,7 @@
       <p class="text-gray-700 font-medium">ลากไฟล์มาวางที่นี่ หรือ
         <span class="text-green-600 underline underline-offset-2">คลิกเพื่อเลือกไฟล์</span>
       </p>
-      <p class="text-xs text-gray-400 mt-1">รองรับ .xls, .xlsx — ไฟล์เดียวที่มีหลาย Sheet แยกตามปี (เช่น 2562, 2563, …)</p>
+      <p class="text-xs text-gray-400 mt-1">รองรับ .xls, .xlsx — ไฟล์เดียวที่มีหลาย Sheet แยกตามปี เช่น 2562, 2563, …</p>
       <input type="file" id="file-input" accept=".xls,.xlsx" class="hidden">
     </div>
 
@@ -60,8 +63,8 @@
     <div class="flex items-start justify-between mb-5">
       <div>
         <div class="flex items-center gap-2 mb-1">
-          <span class="w-7 h-7 bg-green-600 text-white text-xs font-bold rounded-full flex items-center justify-center">2</span>
-          <h2 class="font-semibold text-gray-800">ผลลัพธ์</h2>
+          <span class="w-7 h-7 bg-green-600 text-white text-xs font-bold rounded-full flex items-center justify-center">ผล</span>
+          <h2 class="font-semibold text-gray-800">ผลลัพธ์สรุปประกันสังคม</h2>
         </div>
         <p id="summary-text" class="text-sm text-gray-500 ml-9"></p>
       </div>
@@ -114,6 +117,27 @@
       <input type="file" id="patient-file-input" accept=".xls,.xlsx" class="hidden">
     </div>
 
+    <div class="mt-5 grid gap-3 md:grid-cols-3 text-xs text-gray-600">
+      <div class="rounded-xl bg-blue-50 border border-blue-100 p-3">
+        <p class="font-semibold text-blue-800 mb-1">Patient Status</p>
+        <p><strong>New</strong> = ปีล่าสุดในไฟล์เป็นปีแรกของคนไข้</p>
+        <p><strong>Active</strong> = มาปีล่าสุดและเคยมาปีก่อน</p>
+        <p><strong>At Risk</strong> = ไม่มาปีล่าสุด แต่มาปีก่อนหน้า</p>
+        <p><strong>Lost</strong> = ไม่มามากกว่า 1 ปี</p>
+      </div>
+      <div class="rounded-xl bg-slate-50 border border-slate-100 p-3">
+        <p class="font-semibold text-slate-800 mb-1">Return Pattern</p>
+        <p><strong>Consistent</strong> = มาต่อเนื่องอย่างน้อย 3 ปี</p>
+        <p><strong>Returning</strong> = กลับมาหลังเว้นช่วง</p>
+        <p><strong>One-time</strong> = พบในข้อมูลแค่ปีเดียว</p>
+      </div>
+      <div class="rounded-xl bg-amber-50 border border-amber-100 p-3">
+        <p class="font-semibold text-amber-800 mb-1">Follow-up Priority</p>
+        <p>คำนวณด้วย rule แบบ static จากยอด fee, ความต่อเนื่อง, ปีล่าสุดที่มา และ data flags</p>
+        <p>เหตุผลจะแสดงเป็นภาษาไทยใน column <strong>Follow-up Reason</strong></p>
+      </div>
+    </div>
+
     <div id="patient-status-box" class="mt-4 hidden"></div>
   </div>
 
@@ -135,6 +159,16 @@
         </svg>
         ดาวน์โหลด Patient Follow-up Excel
       </button>
+    </div>
+
+    <div class="rounded-xl bg-slate-50 border border-slate-100 p-4 mb-4 text-xs text-gray-600">
+      <p class="font-semibold text-gray-800 mb-2">วิธีอ่านผลลัพธ์หลัก</p>
+      <div class="grid gap-2 md:grid-cols-2">
+        <p><strong>ทำต่อเนื่อง</strong> = จำนวนปีที่คนไข้มาติดกันจนถึงปีล่าสุดของคนไข้คนนั้น</p>
+        <p><strong>Max ต่อเนื่อง</strong> = ช่วงที่เคยมาติดต่อกันนานที่สุด ไม่จำเป็นต้องรวมปีล่าสุด</p>
+        <p><strong>หมอปีล่าสุด</strong> = รายชื่อหมอทั้งหมดที่คนไข้ทำด้วยในปีล่าสุดของคนไข้</p>
+        <p><strong>Priority</strong> = ความสำคัญในการติดตามจาก rule คงที่ ไม่ใช้ AI/LLM</p>
+      </div>
     </div>
 
     <div class="overflow-x-auto mt-0">
