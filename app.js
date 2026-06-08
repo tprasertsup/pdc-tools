@@ -242,18 +242,29 @@ function classifyReturnPattern(years, datasetLatestYear) {
   return 'Recent Active';
 }
 
+function isZeroFeeDataFlag(flag) {
+  const normalized = String(flag || '').toLowerCase();
+  return normalized.includes('fee = 0') ||
+    normalized.includes('zero-fee') ||
+    normalized.includes('zero fee') ||
+    normalized.includes('0 fee');
+}
+
+function getDataRecheckFlags(dataFlags) {
+  return String(dataFlags || '')
+    .split(',')
+    .map(flag => flag.trim())
+    .filter(Boolean)
+    .filter(flag => !isZeroFeeDataFlag(flag));
+}
+
 function getThaiPriority(summary, datasetLatestYear) {
   const inactiveGap = datasetLatestYear - summary.latestYear;
   const highValue = summary.lifetimeFee >= 50000 || summary.latestYearFee >= 15000;
   const loyal = summary.maxConsecutiveYears >= 3 || summary.activeYearCount >= 3;
+  const dataRecheckFlags = getDataRecheckFlags(summary.dataFlags);
 
-  const needsDataRecheck = String(summary.dataFlags || '')
-    .split(',')
-    .map(flag => flag.trim())
-    .filter(Boolean)
-    .some(flag => !flag.includes('Fee = 0'));
-
-  if (needsDataRecheck) return { priority: 'สูง', reason: `ควรตรวจสอบข้อมูลก่อนติดตาม: ${summary.dataFlags}` };
+  if (dataRecheckFlags.length) return { priority: 'สูง', reason: `ควรตรวจสอบข้อมูลก่อนติดตาม: ${dataRecheckFlags.join(', ')}` };
   if (summary.status === 'Lost' && highValue) return { priority: 'สูง', reason: 'คนไข้มูลค่าสูงไม่ได้กลับมาหลายปี ควรติดตาม' };
   if (summary.status === 'At Risk' && (highValue || loyal)) return { priority: 'สูง', reason: 'คนไข้ประจำหรือมูลค่าสูงไม่มาในปีล่าสุด ควรติดตาม' };
   if (summary.returnPattern === 'Returning') return { priority: 'กลาง', reason: 'คนไข้กลับมาหลังเว้นช่วง ควรรักษาความสัมพันธ์' };

@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>PDC Dental Clinic Tools</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.min.js"></script>
   <script src="app.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <style>
@@ -317,21 +317,22 @@ function switchTab(idx) {
 function renderTable(idx) {
   const sheet = outputSheets[idx];
   const COLS = ['No', 'ชื่อลูกค้า', 'OPD No.', 'ID-Year', 'Fee', 'Date', 'Treat', 'มาที่ปี', 'ปีล่าสุด'];
+  const leftCols = new Set([1]);
 
   let html = `<thead><tr>` +
-    COLS.map(h =>
-      `<th class="bg-green-600 text-white px-3 py-2 text-left text-xs font-semibold whitespace-nowrap sticky top-0">${escHtml(h)}</th>`
+    COLS.map((h, i) =>
+      `<th class="bg-green-600 text-white px-3 py-2 ${leftCols.has(i) ? 'text-left' : 'text-center'} text-xs font-semibold whitespace-nowrap sticky top-0">${escHtml(h)}</th>`
     ).join('') +
     `</tr></thead><tbody>`;
 
   sheet.rows.slice(0, 50).forEach((r, i) => {
     html += `<tr class="border-b border-gray-50 hover:bg-green-50">
-      <td class="px-3 py-1.5 text-gray-400 text-xs text-right">${i + 1}</td>
+      <td class="px-3 py-1.5 text-gray-400 text-xs text-center">${i + 1}</td>
       <td class="px-3 py-1.5 font-medium text-gray-800 whitespace-nowrap">${escHtml(r.name || '—')}</td>
-      <td class="px-3 py-1.5 text-gray-600 text-xs font-mono whitespace-nowrap">${escHtml(r.opd || '—')}</td>
+      <td class="px-3 py-1.5 text-gray-600 text-xs text-center font-mono whitespace-nowrap">${escHtml(r.opd || '—')}</td>
       <td class="px-3 py-1.5 text-gray-600 text-xs text-center">${escHtml(r.idYear)}</td>
-      <td class="px-3 py-1.5 text-gray-600 text-xs text-right">${escHtml(String(r.fee ?? ''))}</td>
-      <td class="px-3 py-1.5 text-gray-600 text-xs font-mono">${escHtml(String(r.date ?? ''))}</td>
+      <td class="px-3 py-1.5 text-gray-600 text-xs text-center">${escHtml(String(r.fee ?? ''))}</td>
+      <td class="px-3 py-1.5 text-gray-600 text-xs text-center font-mono">${escHtml(String(r.date ?? ''))}</td>
       <td class="px-3 py-1.5 text-gray-600 text-xs text-center">${escHtml(String(r.treat ?? ''))}</td>
       <td class="px-3 py-1.5 text-center font-bold text-green-700">${r.totalYears}</td>
       <td class="px-3 py-1.5 text-center text-gray-500 text-xs">${r.prevYear || ''}</td>
@@ -379,6 +380,7 @@ function downloadExcel() {
       { wch: 7 },   // มาที่ปี
       { wch: 7 },   // ปีล่าสุด
     ];
+    applySheetColumnAlignment(ws, { headerRows: 1, leftColumns: [1] });
 
     // Limit sheet name to 31 chars (Excel limit)
     XLSX.utils.book_append_sheet(wb, ws, sheet.name.slice(0, 31));
@@ -468,23 +470,24 @@ function renderPatientResult() {
     `${patientWorkbookData.patientCount} คน | ${patientWorkbookData.visitCount} visits | ปีล่าสุดในไฟล์ ${patientWorkbookData.datasetLatestYear}`;
 
   const COLS = ['No', 'ชื่อคนไข้', 'OPD No.', 'สถานะ', 'ปีล่าสุด', 'ทำต่อเนื่อง', 'Max ต่อเนื่อง', 'Fee ปีล่าสุด', 'ครั้งปีล่าสุด', 'หมอปีล่าสุด', 'Priority', 'เหตุผล'];
-  let html = `<thead><tr>` + COLS.map(h =>
-    `<th class="bg-blue-600 text-white px-3 py-2 text-left text-xs font-semibold whitespace-nowrap sticky top-0">${escHtml(h)}</th>`
+  const leftCols = new Set([1, 9, 11]);
+  let html = `<thead><tr>` + COLS.map((h, i) =>
+    `<th class="bg-blue-600 text-white px-3 py-2 ${leftCols.has(i) ? 'text-left' : 'text-center'} text-xs font-semibold whitespace-nowrap sticky top-0">${escHtml(h)}</th>`
   ).join('') + `</tr></thead><tbody>`;
 
   patientWorkbookData.patientSummaries.slice(0, 50).forEach((r, i) => {
     html += `<tr class="border-b border-gray-50 hover:bg-blue-50">
-      <td class="px-3 py-1.5 text-gray-400 text-xs text-right">${i + 1}</td>
+      <td class="px-3 py-1.5 text-gray-400 text-xs text-center">${i + 1}</td>
       <td class="px-3 py-1.5 font-medium text-gray-800 whitespace-nowrap">${escHtml(r.patientName)}</td>
-      <td class="px-3 py-1.5 text-gray-600 text-xs font-mono whitespace-nowrap">${escHtml(r.opd || '—')}</td>
-      <td class="px-3 py-1.5 text-gray-700 text-xs whitespace-nowrap">${escHtml(r.status)}</td>
+      <td class="px-3 py-1.5 text-gray-600 text-xs text-center font-mono whitespace-nowrap">${escHtml(r.opd || '—')}</td>
+      <td class="px-3 py-1.5 text-center text-gray-700 text-xs whitespace-nowrap">${escHtml(r.status)}</td>
       <td class="px-3 py-1.5 text-center text-gray-700 text-xs">${r.latestYear}</td>
       <td class="px-3 py-1.5 text-center font-bold text-blue-700">${r.currentConsecutiveYears}</td>
       <td class="px-3 py-1.5 text-center text-gray-700">${r.maxConsecutiveYears}</td>
-      <td class="px-3 py-1.5 text-right text-gray-700">${formatMoney(r.latestYearFee)}</td>
+      <td class="px-3 py-1.5 text-center text-gray-700">${formatMoney(r.latestYearFee)}</td>
       <td class="px-3 py-1.5 text-center text-gray-700">${r.latestYearVisitCount}</td>
       <td class="px-3 py-1.5 text-gray-600 text-xs whitespace-nowrap">${escHtml(r.latestYearDoctors)}</td>
-      <td class="px-3 py-1.5 font-semibold text-xs whitespace-nowrap ${r.followUpPriority === 'สูง' ? 'text-red-600' : r.followUpPriority === 'กลาง' ? 'text-amber-600' : 'text-green-600'}">${escHtml(r.followUpPriority)}</td>
+      <td class="px-3 py-1.5 text-center font-semibold text-xs whitespace-nowrap ${r.followUpPriority === 'สูง' ? 'text-red-600' : r.followUpPriority === 'กลาง' ? 'text-amber-600' : 'text-green-600'}">${escHtml(r.followUpPriority)}</td>
       <td class="px-3 py-1.5 text-gray-600 text-xs">${escHtml(r.followUpReason)}</td>
     </tr>`;
   });
@@ -556,11 +559,50 @@ function freezeAndFilterHeaderRows(ws, headerRowCount = 1) {
   return ws;
 }
 
+function applySheetColumnAlignment(ws, options = {}) {
+  if (!ws['!ref']) return ws;
+
+  const range = XLSX.utils.decode_range(ws['!ref']);
+  const headerRows = options.headerRows || 1;
+  const leftColumns = new Set(options.leftColumns || []);
+  const wrapColumns = new Set(options.wrapColumns || []);
+
+  for (let row = range.s.r; row <= range.e.r; row++) {
+    for (let col = range.s.c; col <= range.e.c; col++) {
+      const cellRef = XLSX.utils.encode_cell({ r: row, c: col });
+      const cell = ws[cellRef];
+      if (!cell) continue;
+
+      const isHeader = row < headerRows;
+      const isLeftAligned = leftColumns.has(col);
+      const shouldWrap = isHeader || leftColumns.has(col) || wrapColumns.has(col);
+
+      cell.s = {
+        ...(cell.s || {}),
+        alignment: {
+          ...((cell.s && cell.s.alignment) || {}),
+          horizontal: isLeftAligned ? 'left' : 'center',
+          vertical: 'center',
+          wrapText: shouldWrap,
+        },
+      };
+    }
+  }
+
+  return ws;
+}
+
 function sheetFromObjects(headers, rows, mapper, options = {}) {
   const data = [headers.map(h => Array.isArray(h) ? h[0] : h)];
   if (headers.some(h => Array.isArray(h))) data.push(headers.map(h => Array.isArray(h) ? h[1] : ''));
   rows.forEach((r, i) => data.push(mapper(r, i)));
   const ws = XLSX.utils.aoa_to_sheet(data);
+  if (options.cols) ws['!cols'] = options.cols;
+  applySheetColumnAlignment(ws, {
+    headerRows: options.headerRows || 1,
+    leftColumns: options.leftColumns || [],
+    wrapColumns: options.wrapColumns || [],
+  });
   return freezeAndFilterHeaderRows(ws, options.headerRows || 1);
 }
 
@@ -575,31 +617,48 @@ function downloadPatientExcel() {
     r.lifetimeFee, r.lifetimeVisitCount, r.activeYearCount, r.longestRelationshipDoctor,
     r.longestRelationshipYearsCount, r.longestRelationshipYearRange, r.mainDoctorLatestYear, r.mainDoctorLifetime,
     r.doctorLoyaltyType, r.returnPattern, r.followUpPriority, r.followUpReason,
-  ], { headerRows: 2 });
-  summaryWs['!cols'] = PATIENT_SUMMARY_HEADERS.map((_, i) => ({ wch: i === 0 ? 28 : i === 29 ? 42 : 16 }));
+  ], {
+    headerRows: 2,
+    leftColumns: [0, 13, 16, 21, 24, 25, 29],
+    wrapColumns: [3, 29],
+    cols: PATIENT_SUMMARY_HEADERS.map((_, i) => ({ wch: i === 0 ? 28 : i === 13 || i === 16 ? 28 : i === 29 ? 42 : 16 })),
+  });
   XLSX.utils.book_append_sheet(wb, summaryWs, 'Patient Summary');
 
   const yearlyHeaders = ['Patient Name', 'OPD No.', 'Year', 'Fee', 'Visit Count', 'Doctors', 'Doctor Count', 'Avg Fee / Visit', 'Zero-Fee Visits', 'Is Latest Year'];
   XLSX.utils.book_append_sheet(wb, sheetFromObjects(yearlyHeaders, patientWorkbookData.yearlyDetails, r => [
     r.patientName, r.opd, r.year, r.fee, r.visitCount, r.doctors, r.doctorCount, r.avgFeePerVisit, r.zeroFeeVisits, r.isLatestYear,
-  ]), 'Patient Yearly Detail');
+  ], {
+    leftColumns: [0, 5],
+    cols: yearlyHeaders.map((_, i) => ({ wch: i === 0 ? 28 : i === 5 ? 32 : 14 })),
+  }), 'Patient Yearly Detail');
 
   const relationshipHeaders = ['Patient Name', 'OPD No.', 'Doctor', 'First Year With Doctor', 'Latest Year With Doctor', 'Year Count With Doctor', 'Consecutive Years With Doctor To Latest', 'Max Consecutive Years With Doctor', 'Visit Count With Doctor', 'Fee With Doctor', 'Is Seen In Latest Patient Year', 'Doctor Role'];
   XLSX.utils.book_append_sheet(wb, sheetFromObjects(relationshipHeaders, patientWorkbookData.doctorRelationships, r => [
     r.patientName, r.opd, r.doctor, r.firstYearWithDoctor, r.latestYearWithDoctor, r.yearCountWithDoctor,
     r.consecutiveYearsWithDoctorToLatest, r.maxConsecutiveYearsWithDoctor, r.visitCountWithDoctor,
     r.feeWithDoctor, r.isSeenInLatestPatientYear, r.doctorRole,
-  ]), 'Doctor Relationship');
+  ], {
+    leftColumns: [0, 2],
+    cols: relationshipHeaders.map((_, i) => ({ wch: i === 0 ? 28 : i === 2 ? 24 : 16 })),
+  }), 'Doctor Relationship');
 
   const issueHeaders = ['Issue Type', 'Sheet', 'Row', 'Patient Name', 'OPD No.', 'Detail'];
   XLSX.utils.book_append_sheet(wb, sheetFromObjects(issueHeaders, patientWorkbookData.dataIssues, r => [
     r.issueType, r.sheet, r.row, r.patientName, r.opd, r.detail,
-  ]), 'Data Issues');
+  ], {
+    leftColumns: [3, 5],
+    wrapColumns: [5],
+    cols: issueHeaders.map((_, i) => ({ wch: i === 3 ? 28 : i === 5 ? 42 : 16 })),
+  }), 'Data Issues');
 
   const rawHeaders = ['Source Sheet', 'Source Row', 'Source No', 'Patient Name', 'Normalized Patient Key', 'OPD No.', 'Fee', 'Year', 'Doctor'];
   XLSX.utils.book_append_sheet(wb, sheetFromObjects(rawHeaders, patientWorkbookData.rawRows, r => [
     r.sourceSheet, r.sourceRow, r.sourceNo, r.patientName, r.patientKey, r.opd, r.fee, r.year, r.doctor,
-  ]), 'Raw Cleaned Data');
+  ], {
+    leftColumns: [0, 3, 4, 8],
+    cols: rawHeaders.map((_, i) => ({ wch: i === 3 || i === 4 ? 28 : i === 0 || i === 8 ? 22 : 14 })),
+  }), 'Raw Cleaned Data');
 
   const latest = patientWorkbookData.datasetLatestYear || '';
   XLSX.writeFile(wb, `patient_follow_up_summary_${latest}.xlsx`);

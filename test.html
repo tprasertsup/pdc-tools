@@ -391,6 +391,21 @@ test('non-zero-fee data recheck flags can still force high priority', () => {
   expect(dataIssues).toHaveLength(1);
 });
 
+test('zero-fee flag is not included in high-priority data recheck reason', () => {
+  const data = {
+    'หมอเอ': [
+      ['No', 'ชื่อลูกค้า', 'OPD No.', 'Fee', 'Last Year'],
+      [1, 'คนไข้ Flag ผสม', '0001', 0, 2568],
+      [2, 'คนไข้ Flag ผสม', '0002', 1000, 2568],
+    ],
+  };
+
+  const { patientSummaries } = buildFromDoctorSheets(data);
+  expect(patientSummaries[0].dataFlags).toContain('มี visit ค่า Fee = 0');
+  expect(patientSummaries[0].followUpPriority).toBe('สูง');
+  expect(patientSummaries[0].followUpReason).toBe('ควรตรวจสอบข้อมูลก่อนติดตาม: พบ OPD หลายเลขในชื่อเดียวกัน');
+});
+
 // ─────────────────────────────────────────────
 // RUN ALL TESTS
 // ─────────────────────────────────────────────
