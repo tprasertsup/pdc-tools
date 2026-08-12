@@ -5,6 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>PDC Dental Clinic Tools</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- cpexcel.js must load before xlsx.min.js: it supplies the legacy codepage
+       tables (e.g. Thai Windows-874) that old binary .xls files rely on to
+       decode non-ASCII text such as patient names. Without it, Thai strings
+       in .xls uploads silently decode to empty while ASCII fields (OPD No.,
+       Fee, Date, Treat) are unaffected. -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/cpexcel.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.min.js"></script>
   <script src="app.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
